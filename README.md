@@ -25,6 +25,7 @@ sight
 | `n` | Next file |
 | `p` | Previous file |
 | `?` | Toggle help |
+| `c` | Comment on hunk |
 | `q` / `Esc` | Quit |
 
 ## Development

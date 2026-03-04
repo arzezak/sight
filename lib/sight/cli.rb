@@ -9,7 +9,9 @@ module Sight
         puts "Usage: sight"
         puts "Interactive git diff viewer (staged + unstaged)"
         puts
-        puts "Keys: j/k hunks, n/p files, ? help, q quit"
+        puts "Keys: j/k hunks, n/p files, c comment, ? help, q quit"
+        puts
+        puts "Annotations are printed to stdout on quit."
         return
       end
 
