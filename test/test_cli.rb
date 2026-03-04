@@ -28,7 +28,7 @@ class TestCLI < Minitest::Test
   def test_empty_diff
     Sight::Git.stub(:diff, "") do
       _, err = capture_io { Sight::CLI.run([]) }
-      assert_includes err, "No diff output."
+      assert_includes err, "No diff output"
     end
   end
 

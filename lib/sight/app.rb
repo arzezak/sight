@@ -5,13 +5,15 @@ require "curses"
 module Sight
   class App
     attr_reader :files, :file_lines
-    attr_accessor :file_idx, :offset
+    attr_accessor :file_idx, :offset, :hunk_idx
 
     def initialize(files)
       @files = files
       @file_lines = files.map { build_file_lines(it) }
       @file_idx = 0
       @offset = 0
+      @hunk_idx = 0
+      @hunk_offsets_cache = {}
     end
 
     def run
@@ -49,6 +51,7 @@ module Sight
       Curses.init_pair(2, Curses::COLOR_RED, -1)
       Curses.init_pair(3, Curses::COLOR_CYAN, -1)
       Curses.init_pair(4, Curses::COLOR_YELLOW, -1)
+      Curses.init_pair(5, 240, -1)
     end
 
     def lines
@@ -78,20 +81,29 @@ module Sight
       dim = Curses.color_pair(0) | Curses::A_DIM
       content_width = width - gutter - 3
 
+      selected_start = hunk_offsets[hunk_idx]
+      selected_end = if hunk_idx + 1 < hunk_offsets.size
+                       hunk_offsets[hunk_idx + 1]
+                     else
+                       lines.size
+                     end
+
       scroll_height.times do |row|
         idx = offset + row
         break if idx >= lines.size
         line = lines[idx]
         win.setpos(row + 2, 0)
-        win.attron(dim) { win.addstr("#{format_gutter(line.type, line.lineno, gutter)} │ ") }
-        win.attron(color_for(line.type)) { win.addstr(line.text[0, content_width]) }
+        active = idx >= selected_start && idx < selected_end
+        win.attron(dim) { win.addstr("#{format_gutter(line.type, line.lineno, gutter)} \u2502 ") }
+        attr = active ? color_for(line.type) : Curses.color_pair(5)
+        win.attron(attr) { win.addstr(line.text[0, content_width]) }
       end
     end
 
     def render_status_bar(win, width)
       win.setpos(Curses.lines - 1, 0)
       win.attron(Curses.color_pair(4) | Curses::A_REVERSE) do
-        status = " File #{file_idx + 1}/#{files.size} | Line #{offset + 1}/#{lines.size} "
+        status = " File #{file_idx + 1}/#{files.size} | Hunk #{hunk_idx + 1}/#{hunk_offsets.size} | Line #{offset + 1}/#{lines.size} "
         win.addstr(status.ljust(width))
       end
     end
@@ -126,23 +138,12 @@ module Sight
       end
     end
 
-    def scroll_to(delta)
-      max = [0, lines.size - scroll_height].max
-      self.offset = (offset + delta).clamp(0, max)
-    end
-
     def handle_input
       key = Curses.getch
       case key
       when "q", 27 then return false
-      when "j" then scroll_to(1)
-      when "k" then scroll_to(-1)
-      when "f" then scroll_to(scroll_height)
-      when "b" then scroll_to(-scroll_height)
-      when "d" then scroll_to(scroll_height / 2)
-      when "u" then scroll_to(-scroll_height / 2)
-      when "g" then self.offset = 0
-      when "G" then scroll_to(lines.size)
+      when "j" then jump_hunk(1)
+      when "k" then jump_hunk(-1)
       when "n" then jump_file(1)
       when "p" then jump_file(-1)
       when "?" then show_help
@@ -151,14 +152,8 @@ module Sight
     end
 
     HELP_KEYS = [
-      ["j", "Scroll down"],
-      ["k", "Scroll up"],
-      ["d", "Half Page down"],
-      ["u", "Half page up"],
-      ["f", "Full page down"],
-      ["b", "Full page up"],
-      ["g", "Go to top"],
-      ["G", "Go to bottom"],
+      ["j", "Next hunk"],
+      ["k", "Previous hunk"],
       ["n", "Next file"],
       ["p", "Previous file"],
       ["q / Esc", "Quit"],
@@ -201,11 +196,33 @@ module Sight
       end
     end
 
+    def hunk_offsets
+      @hunk_offsets_cache[file_idx] ||= begin
+        offsets = []
+        line_idx = 0
+        files[file_idx].hunks.each do |hunk|
+          offsets << line_idx
+          line_idx += hunk.lines.size
+        end
+        offsets
+      end
+    end
+
+    def jump_hunk(delta)
+      return if hunk_offsets.empty?
+      self.hunk_idx = (hunk_idx + delta).clamp(0, hunk_offsets.size - 1)
+      target = hunk_offsets[hunk_idx]
+      margin = [2, scroll_height / 4].min
+      max = [0, lines.size - scroll_height].max
+      self.offset = [target - margin, 0].max.clamp(0, max)
+    end
+
     def jump_file(direction)
       new_idx = (file_idx + direction).clamp(0, files.size - 1)
       return if new_idx == file_idx
       self.file_idx = new_idx
       self.offset = 0
+      self.hunk_idx = 0
     end
   end
 end

@@ -20,7 +20,7 @@ module Sight
 
       raw = Git.diff
       if raw.empty?
-        warn "No diff output."
+        warn "No diff output"
         return
       end
 
