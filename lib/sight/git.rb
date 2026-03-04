@@ -6,10 +6,7 @@ module Sight
 
     def diff
       output, success = run_cmd(["git", "diff", "--no-color", "HEAD"])
-      unless success
-        output, success = run_cmd(["git", "diff", "--no-color", "--cached"], err: [:child, :out])
-        raise Error, "git diff failed: #{output}" unless success
-      end
+      raise Error, "git diff failed" unless success
       output
     end
 
