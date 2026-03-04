@@ -135,32 +135,32 @@ module Sight
       key = Curses.getch
       case key
       when "q", 27 then return false
-      when "j", Curses::KEY_DOWN then scroll_to(1)
-      when "k", Curses::KEY_UP then scroll_to(-1)
+      when "j" then scroll_to(1)
+      when "k" then scroll_to(-1)
       when "f" then scroll_to(scroll_height)
       when "b" then scroll_to(-scroll_height)
       when "d" then scroll_to(scroll_height / 2)
       when "u" then scroll_to(-scroll_height / 2)
       when "g" then self.offset = 0
       when "G" then scroll_to(lines.size)
-      when "n", Curses::KEY_RIGHT then jump_file(1)
-      when "p", Curses::KEY_LEFT then jump_file(-1)
+      when "n" then jump_file(1)
+      when "p" then jump_file(-1)
       when "?" then show_help
       end
       true
     end
 
     HELP_KEYS = [
-      ["j / ↓", "Scroll down"],
-      ["k / ↑", "Scroll up"],
+      ["j", "Scroll down"],
+      ["k", "Scroll up"],
       ["d", "Half Page down"],
       ["u", "Half page up"],
       ["f", "Full page down"],
       ["b", "Full page up"],
       ["g", "Go to top"],
       ["G", "Go to bottom"],
-      ["n / →", "Next file"],
-      ["p / ←", "Previous file"],
+      ["n", "Next file"],
+      ["p", "Previous file"],
       ["q / Esc", "Quit"],
       ["?", "Toggle this help"]
     ].freeze
