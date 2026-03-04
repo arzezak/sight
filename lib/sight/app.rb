@@ -4,7 +4,7 @@ require "curses"
 
 module Sight
   class App
-    attr_reader :files, :file_lines
+    attr_reader :files, :file_lines, :annotations
     attr_accessor :file_idx, :offset, :hunk_idx
 
     def initialize(files)
@@ -14,6 +14,7 @@ module Sight
       @offset = 0
       @hunk_idx = 0
       @hunk_offsets_cache = {}
+      @annotations = []
     end
 
     def run
@@ -146,6 +147,7 @@ module Sight
       when "k" then jump_hunk(-1)
       when "n" then jump_file(1)
       when "p" then jump_file(-1)
+      when "c" then annotate_hunk
       when "?" then show_help
       end
       true
@@ -157,6 +159,7 @@ module Sight
       ["n", "Next file"],
       ["p", "Previous file"],
       ["q / Esc", "Quit"],
+      ["c", "Comment on hunk"],
       ["?", "Toggle this help"]
     ].freeze
 
@@ -194,6 +197,66 @@ module Sight
         win.setpos(top + height - 1, left)
         win.addstr("└#{"─" * (width - 2)}┘")
       end
+    end
+
+    def annotate_hunk
+      hunk = files[file_idx].hunks[hunk_idx]
+      return unless hunk
+      comment = prompt_comment("Comment on hunk")
+      return unless comment
+      @annotations << Annotation.new(
+        file_path: files[file_idx].path,
+        type: :hunk,
+        hunk: hunk,
+        comment: comment
+      )
+    end
+
+    def prompt_comment(title)
+      win = Curses.stdscr
+      max_width = 80
+      width = [Curses.cols * 2 / 3, 50].max
+      width = [width, max_width].min
+      height = 5
+      top = (Curses.lines - height) / 2
+      left = (Curses.cols - width) / 2
+
+      draw_box(win, top, left, width, height, title, [""])
+      win.setpos(top + 3, left + 3)
+      win.refresh
+
+      Curses.curs_set(1)
+      text = ""
+      field_width = width - 6
+      redraw_field = -> {
+        win.setpos(top + 3, left + 3)
+        win.addstr(" " * field_width)
+        visible = (text.length > field_width) ? text[-field_width..] : text
+        win.setpos(top + 3, left + 3)
+        win.addstr(visible)
+      }
+      loop do
+        ch = Curses.getch
+        case ch
+        when 10, 13, Curses::KEY_ENTER
+          break
+        when 27
+          text = nil
+          break
+        when Curses::KEY_BACKSPACE, 127, 8
+          unless text.empty?
+            text = text[0..-2]
+            redraw_field.call
+          end
+        else
+          text += ch.chr if ch.is_a?(Integer) && ch >= 32 && ch < 127
+          text += ch if ch.is_a?(String) && ch.length == 1
+          redraw_field.call
+        end
+      end
+      Curses.curs_set(0)
+
+      text&.strip&.empty? ? nil : text&.strip
     end
 
     def hunk_offsets

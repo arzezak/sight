@@ -38,6 +38,7 @@ class TestCLI < Minitest::Test
     Sight::Git.stub(:diff, sample_diff) do
       mock_app = Minitest::Mock.new
       mock_app.expect(:run, nil)
+      mock_app.expect(:annotations, [])
 
       Sight::App.stub(:new, ->(files) {
         received_files = files
@@ -47,6 +48,30 @@ class TestCLI < Minitest::Test
       end
 
       assert_equal 1, received_files.size
+      mock_app.verify
+    end
+  end
+
+  def test_annotations_output_on_quit
+    hunk = Sight::Hunk.new(context: "def foo", lines: [
+      Sight::DiffLine.new(type: :add, content: "+new", lineno: 1)
+    ])
+    ann = Sight::Annotation.new(
+      file_path: "foo.rb", type: :hunk, hunk: hunk, comment: "fix this"
+    )
+
+    Sight::Git.stub(:diff, sample_diff) do
+      mock_app = Minitest::Mock.new
+      mock_app.expect(:run, nil)
+      mock_app.expect(:annotations, [ann])
+      mock_app.expect(:annotations, [ann])
+
+      Sight::App.stub(:new, ->(_files) { mock_app }) do
+        out, = capture_io { Sight::CLI.run([]) }
+        assert_includes out, "## File: foo.rb"
+        assert_includes out, "> fix this"
+      end
+
       mock_app.verify
     end
   end

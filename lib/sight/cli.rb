@@ -25,7 +25,12 @@ module Sight
       end
 
       files = DiffParser.parse(raw)
-      App.new(files).run
+      app = App.new(files)
+      app.run
+
+      unless app.annotations.empty?
+        puts AnnotationFormatter.format(app.annotations)
+      end
     end
   end
 end
