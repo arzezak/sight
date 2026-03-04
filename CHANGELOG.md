@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0] - 2026-03-04
+
+### Changed
+
+- Navigation is now hunk-based: `j`/`k` jump between hunks
+- Active hunk is highlighted; inactive hunks are dimmed
+- Removed line-scrolling keys (`f`/`b`/`d`/`u`/`g`/`G`) and arrow keys
+
 ## [0.1.0] - 2026-03-04
 
 ### Added
