@@ -9,7 +9,7 @@ module Sight
         puts "Usage: sight"
         puts "Interactive git diff viewer (staged + unstaged)"
         puts
-        puts "Keys: j/k/↑/↓ scroll, f/b page, d/u half-page, g/G top/bottom, n/p/→/← next/prev file, ? help, q quit"
+        puts "Keys: j/k hunks, n/p files, ? help, q quit"
         return
       end
 

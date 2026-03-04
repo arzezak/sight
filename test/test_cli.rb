@@ -7,7 +7,7 @@ class TestCLI < Minitest::Test
   def test_help_flag
     out, = capture_io { Sight::CLI.run(["--help"]) }
     assert_includes out, "Usage: sight"
-    assert_includes out, "scroll"
+    assert_includes out, "hunks"
   end
 
   def test_help_short_flag

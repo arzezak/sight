@@ -1,6 +1,6 @@
 # Sight
 
-Terminal UI for browsing git diffs interactively with colors, scrolling, and file navigation.
+Terminal UI for browsing git diffs interactively with colors, hunk navigation, and file navigation.
 
 ## Installation
 
@@ -20,16 +20,10 @@ sight
 
 | Key | Action |
 |-----|--------|
-| `j` / `↓` | Scroll down |
-| `k` / `↑` | Scroll up |
-| `d` | Half page down |
-| `u` | Half page up |
-| `f` | Full page down |
-| `b` | Full page up |
-| `g` | Go to top |
-| `G` | Go to bottom |
-| `n` / `→` | Next file |
-| `p` / `←` | Previous file |
+| `j` | Next hunk |
+| `k` | Previous hunk |
+| `n` | Next file |
+| `p` | Previous file |
 | `?` | Toggle help |
 | `q` / `Esc` | Quit |
 

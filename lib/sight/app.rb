@@ -83,10 +83,10 @@ module Sight
 
       selected_start = hunk_offsets[hunk_idx]
       selected_end = if hunk_idx + 1 < hunk_offsets.size
-                       hunk_offsets[hunk_idx + 1]
-                     else
-                       lines.size
-                     end
+        hunk_offsets[hunk_idx + 1]
+      else
+        lines.size
+      end
 
       scroll_height.times do |row|
         idx = offset + row
