@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.0] - 2026-03-04
+
+### Added
+
+- Comment on hunks with `c` — annotations are printed to stdout on quit as markdown
+
+### Changed
+
+- Removed initial-commit diff fallback from `Git.diff`
+
 ## [0.2.0] - 2026-03-04
 
 ### Changed
