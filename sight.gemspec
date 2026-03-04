@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors = ["Ariel Rzezak"]
   spec.email = ["arzezak@gmail.com"]
 
-  spec.summary = "Interactive git diff viewer for the terminal"
-  spec.description = "A TUI tool to browse git diffs interactively with colors, file navigation, and scrolling."
+  spec.summary = "TUI for closing the loop on AI-generated code changes"
+  spec.description = "Browse diffs by hunk, comment on changes, and close the feedback loop with AI agents."
   spec.homepage = "https://github.com/arzezak/sight"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"

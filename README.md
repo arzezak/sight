@@ -1,6 +1,6 @@
 # Sight
 
-Terminal UI for browsing git diffs interactively with colors, hunk navigation, and file navigation.
+TUI for closing the loop on AI-generated code changes.
 
 ## Installation
 
