@@ -113,7 +113,12 @@ module Sight
     def render_status_bar(win, width)
       win.setpos(Curses.lines - 1, 0)
       win.attron(Curses.color_pair(4) | Curses::A_REVERSE) do
-        status = " File #{file_idx + 1}/#{files.size} | Hunk #{hunk_idx + 1}/#{hunk_offsets.size} | Line #{offset + 1}/#{lines.size} "
+        percent = if lines.size <= scroll_height
+          100
+        else
+          ((offset + scroll_height) * 100.0 / lines.size).ceil.clamp(0, 100)
+        end
+        status = " File #{file_idx + 1}/#{files.size} | Hunk #{hunk_idx + 1}/#{hunk_offsets.size} | #{percent}% "
         win.addstr(status.ljust(width))
       end
     end
