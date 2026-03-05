@@ -53,6 +53,7 @@ module Sight
       Curses.init_pair(3, Curses::COLOR_CYAN, -1)
       Curses.init_pair(4, Curses::COLOR_YELLOW, -1)
       Curses.init_pair(5, 240, -1)
+      Curses.init_pair(6, Curses::COLOR_MAGENTA, -1)
     end
 
     def lines
@@ -75,15 +76,14 @@ module Sight
       path = file.path
       gap = width - path.length - badge.length
       win.setpos(0, 0)
-      win.attron(color_for(:header)) do
-        if gap >= 1
-          win.addstr("#{path}#{" " * gap}#{badge}"[0, width])
-        else
-          win.addstr(path[0, width])
-        end
+      if gap >= 1
+        win.attron(color_for(:header)) { win.addstr("#{path}#{" " * gap}") }
+        win.attron(badge_color(file.status)) { win.addstr(badge) }
+      else
+        win.attron(color_for(:header)) { win.addstr(path[0, width]) }
       end
       win.setpos(1, 0)
-      win.attron(color_for(:header)) { win.addstr("\u2500" * width) }
+      win.attron(Curses.color_pair(0) | Curses::A_BOLD) { win.addstr("\u2500" * width) }
     end
 
     def render_content(win, width)
@@ -132,8 +132,17 @@ module Sight
       case type
       when :add then Curses.color_pair(1)
       when :del then Curses.color_pair(2)
-      when :header then Curses.color_pair(4) | Curses::A_BOLD
+      when :header then Curses.color_pair(0) | Curses::A_BOLD
       else Curses.color_pair(0)
+      end
+    end
+
+    def badge_color(status)
+      case status
+      when :added then Curses.color_pair(1) | Curses::A_BOLD
+      when :deleted then Curses.color_pair(2) | Curses::A_BOLD
+      when :untracked then Curses.color_pair(6) | Curses::A_BOLD
+      else Curses.color_pair(4) | Curses::A_BOLD
       end
     end
 
