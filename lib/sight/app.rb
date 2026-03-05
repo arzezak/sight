@@ -165,6 +165,10 @@ module Sight
       when "k" then jump_hunk(-1)
       when "n" then jump_file(1)
       when "p" then jump_file(-1)
+      when 6 then scroll(scroll_height)
+      when 2 then scroll(-scroll_height)
+      when 4 then scroll(scroll_height / 2)
+      when 21 then scroll(-scroll_height / 2)
       when "c" then annotate_hunk
       when "?" then show_help
       end
@@ -174,6 +178,10 @@ module Sight
     HELP_KEYS = [
       ["j", "Next hunk"],
       ["k", "Previous hunk"],
+      ["C-f", "Page down"],
+      ["C-b", "Page up"],
+      ["C-d", "Half page down"],
+      ["C-u", "Half page up"],
       ["n", "Next file"],
       ["p", "Previous file"],
       ["q / Esc", "Quit"],
@@ -287,6 +295,11 @@ module Sight
         end
         offsets
       end
+    end
+
+    def scroll(delta)
+      max = [0, lines.size - scroll_height].max
+      self.offset = (offset + delta).clamp(0, max)
     end
 
     def jump_hunk(delta)
