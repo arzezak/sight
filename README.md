@@ -30,36 +30,22 @@ sight
 | `c` | Comment on hunk |
 | `q` / `Esc` | Quit |
 
-### Claude Code Integration
+### Agent Integration
 
-Install a Claude Code hook so annotations are automatically fed as context in your next message:
+Install a hook so annotations are automatically fed as context in your next message:
 
 ```bash
-sight install-hook
+sight install-hook claude   # Claude Code (~/.config/claude/settings.json)
+sight install-hook cursor   # Cursor (~/.cursor/hooks.json)
 ```
 
-This adds a `UserPromptSubmit` hook to `~/.config/claude/settings.json`. When you quit sight after annotating, the next message you send in Claude Code will include your annotations.
+When you quit sight after annotating, the next message you send will include your annotations.
 
 To remove:
 
 ```bash
-sight uninstall-hook
-```
-
-### Cursor Integration
-
-Install a Cursor hook so annotations are automatically fed as context in your next message:
-
-```bash
-sight install-cursor-hook
-```
-
-This adds a `beforeSubmitPrompt` hook to `~/.cursor/hooks.json`. When you quit sight after annotating, the next message you send in Cursor will include your annotations.
-
-To remove:
-
-```bash
-sight uninstall-cursor-hook
+sight uninstall-hook claude
+sight uninstall-hook cursor
 ```
 
 ## Development

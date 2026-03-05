@@ -4,7 +4,7 @@ require "test_helper"
 require "tmpdir"
 require "json"
 
-class TestHookInstaller < Minitest::Test
+class TestClaudeHookInstaller < Minitest::Test
   def setup
     @tmpdir = Dir.mktmpdir
     @settings_path = File.join(@tmpdir, "settings.json")
@@ -15,7 +15,7 @@ class TestHookInstaller < Minitest::Test
   end
 
   def test_install_creates_settings_from_scratch
-    out, = capture_io { Sight::HookInstaller.install(path: @settings_path) }
+    out, = capture_io { Sight::ClaudeHookInstaller.install(path: @settings_path) }
 
     assert_includes out, "Installed"
     settings = JSON.parse(File.read(@settings_path))
@@ -33,7 +33,7 @@ class TestHookInstaller < Minitest::Test
     }
     File.write(@settings_path, JSON.generate(existing))
 
-    capture_io { Sight::HookInstaller.install(path: @settings_path) }
+    capture_io { Sight::ClaudeHookInstaller.install(path: @settings_path) }
 
     settings = JSON.parse(File.read(@settings_path))
     assert_equal 1, settings["hooks"]["Notification"].size
@@ -42,8 +42,8 @@ class TestHookInstaller < Minitest::Test
   end
 
   def test_install_is_idempotent
-    capture_io { Sight::HookInstaller.install(path: @settings_path) }
-    out, = capture_io { Sight::HookInstaller.install(path: @settings_path) }
+    capture_io { Sight::ClaudeHookInstaller.install(path: @settings_path) }
+    out, = capture_io { Sight::ClaudeHookInstaller.install(path: @settings_path) }
 
     assert_includes out, "already installed"
     settings = JSON.parse(File.read(@settings_path))
@@ -51,8 +51,8 @@ class TestHookInstaller < Minitest::Test
   end
 
   def test_uninstall_removes_sight_hook
-    capture_io { Sight::HookInstaller.install(path: @settings_path) }
-    out, = capture_io { Sight::HookInstaller.uninstall(path: @settings_path) }
+    capture_io { Sight::ClaudeHookInstaller.install(path: @settings_path) }
+    out, = capture_io { Sight::ClaudeHookInstaller.uninstall(path: @settings_path) }
 
     assert_includes out, "Uninstalled"
     settings = JSON.parse(File.read(@settings_path))
@@ -70,7 +70,7 @@ class TestHookInstaller < Minitest::Test
     }
     File.write(@settings_path, JSON.generate(existing))
 
-    capture_io { Sight::HookInstaller.uninstall(path: @settings_path) }
+    capture_io { Sight::ClaudeHookInstaller.uninstall(path: @settings_path) }
 
     settings = JSON.parse(File.read(@settings_path))
     assert_equal 1, settings["hooks"]["UserPromptSubmit"].size
@@ -78,13 +78,13 @@ class TestHookInstaller < Minitest::Test
   end
 
   def test_uninstall_no_settings_file
-    out, = capture_io { Sight::HookInstaller.uninstall(path: @settings_path) }
+    out, = capture_io { Sight::ClaudeHookInstaller.uninstall(path: @settings_path) }
     assert_includes out, "No settings file"
   end
 
   def test_uninstall_no_sight_hook
     File.write(@settings_path, JSON.generate({"hooks" => {"UserPromptSubmit" => []}}))
-    out, = capture_io { Sight::HookInstaller.uninstall(path: @settings_path) }
+    out, = capture_io { Sight::ClaudeHookInstaller.uninstall(path: @settings_path) }
     assert_includes out, "No sight hook"
   end
 end

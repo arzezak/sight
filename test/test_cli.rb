@@ -29,40 +29,43 @@ class TestCLI < Minitest::Test
     out, = capture_io { Sight::CLI.run(["--help"]) }
     assert_includes out, "install-hook"
     assert_includes out, "uninstall-hook"
-    assert_includes out, "install-cursor-hook"
-    assert_includes out, "uninstall-cursor-hook"
   end
 
-  def test_install_hook_calls_installer
+  def test_install_hook_claude
     called = false
-    Sight::HookInstaller.stub(:install, -> { called = true }) do
-      Sight::CLI.run(["install-hook"])
+    Sight::ClaudeHookInstaller.stub(:install, -> { called = true }) do
+      Sight::CLI.run(["install-hook", "claude"])
     end
     assert called
   end
 
-  def test_uninstall_hook_calls_installer
+  def test_uninstall_hook_claude
     called = false
-    Sight::HookInstaller.stub(:uninstall, -> { called = true }) do
-      Sight::CLI.run(["uninstall-hook"])
+    Sight::ClaudeHookInstaller.stub(:uninstall, -> { called = true }) do
+      Sight::CLI.run(["uninstall-hook", "claude"])
     end
     assert called
   end
 
-  def test_install_cursor_hook_calls_installer
+  def test_install_hook_cursor
     called = false
     Sight::CursorHookInstaller.stub(:install, -> { called = true }) do
-      Sight::CLI.run(["install-cursor-hook"])
+      Sight::CLI.run(["install-hook", "cursor"])
     end
     assert called
   end
 
-  def test_uninstall_cursor_hook_calls_installer
+  def test_uninstall_hook_cursor
     called = false
     Sight::CursorHookInstaller.stub(:uninstall, -> { called = true }) do
-      Sight::CLI.run(["uninstall-cursor-hook"])
+      Sight::CLI.run(["uninstall-hook", "cursor"])
     end
     assert called
+  end
+
+  def test_install_hook_unknown_agent
+    _, err = capture_io { Sight::CLI.run(["install-hook", "vim"]) }
+    assert_includes err, "Unknown agent"
   end
 
   def test_cursor_hook_run_with_pending_review

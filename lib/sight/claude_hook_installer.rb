@@ -4,7 +4,7 @@ require "json"
 require "fileutils"
 
 module Sight
-  module HookInstaller
+  module ClaudeHookInstaller
     HOOK_COMMAND = "sight hook-run"
 
     module_function

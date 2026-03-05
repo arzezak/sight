@@ -14,10 +14,8 @@ module Sight
         puts "Keys: j/k hunks, n/p files, c comment, ? help, q quit"
         puts
         puts "Subcommands:"
-        puts "  install-hook          Install Claude Code hook for annotations"
-        puts "  uninstall-hook        Remove Claude Code hook"
-        puts "  install-cursor-hook   Install Cursor hook for annotations"
-        puts "  uninstall-cursor-hook Remove Cursor hook"
+        puts "  install-hook <agent>    Install hook (claude, cursor)"
+        puts "  uninstall-hook <agent>  Remove hook (claude, cursor)"
         return
       end
 
@@ -26,23 +24,13 @@ module Sight
         return
       end
 
-      if argv.include?("install-hook")
-        HookInstaller.install
+      if argv[0] == "install-hook"
+        install_hook(argv[1])
         return
       end
 
-      if argv.include?("uninstall-hook")
-        HookInstaller.uninstall
-        return
-      end
-
-      if argv.include?("install-cursor-hook")
-        CursorHookInstaller.install
-        return
-      end
-
-      if argv.include?("uninstall-cursor-hook")
-        CursorHookInstaller.uninstall
+      if argv[0] == "uninstall-hook"
+        uninstall_hook(argv[1])
         return
       end
 
@@ -80,6 +68,29 @@ module Sight
         puts formatted
         Git.save_pending_review(formatted)
       end
+    end
+
+    AGENTS = {
+      "claude" => ClaudeHookInstaller,
+      "cursor" => CursorHookInstaller
+    }.freeze
+
+    def install_hook(agent)
+      installer = AGENTS[agent]
+      unless installer
+        warn "Unknown agent: #{agent.inspect}. Use: claude, cursor"
+        return
+      end
+      installer.install
+    end
+
+    def uninstall_hook(agent)
+      installer = AGENTS[agent]
+      unless installer
+        warn "Unknown agent: #{agent.inspect}. Use: claude, cursor"
+        return
+      end
+      installer.uninstall
     end
 
     def run_hook
