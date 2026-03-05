@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "json"
+
 module Sight
   module CLI
     module_function
@@ -12,8 +14,10 @@ module Sight
         puts "Keys: j/k hunks, n/p files, c comment, ? help, q quit"
         puts
         puts "Subcommands:"
-        puts "  install-hook     Install Claude Code hook for annotations"
-        puts "  uninstall-hook   Remove Claude Code hook"
+        puts "  install-hook          Install Claude Code hook for annotations"
+        puts "  uninstall-hook        Remove Claude Code hook"
+        puts "  install-cursor-hook   Install Cursor hook for annotations"
+        puts "  uninstall-cursor-hook Remove Cursor hook"
         return
       end
 
@@ -32,8 +36,23 @@ module Sight
         return
       end
 
+      if argv.include?("install-cursor-hook")
+        CursorHookInstaller.install
+        return
+      end
+
+      if argv.include?("uninstall-cursor-hook")
+        CursorHookInstaller.uninstall
+        return
+      end
+
       if argv.include?("hook-run")
         run_hook
+        return
+      end
+
+      if argv.include?("cursor-hook-run")
+        run_cursor_hook
         return
       end
 
@@ -75,6 +94,21 @@ module Sight
       puts "The user has just finished reviewing your code changes in sight. Here are their annotations:"
       puts
       puts content
+      File.delete(file)
+    end
+
+    def run_cursor_hook
+      $stdin.read
+      git_dir = Git.repo_dir
+    rescue Error
+      nil
+    else
+      file = File.join(git_dir, "sight", "pending-review")
+      return unless File.exist?(file)
+
+      content = File.read(file)
+      message = "The user has just finished reviewing your code changes in sight. Here are their annotations:\n\n#{content}"
+      puts JSON.generate(user_message: message)
       File.delete(file)
     end
   end

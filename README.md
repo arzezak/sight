@@ -24,6 +24,8 @@ sight
 | `k` | Previous hunk |
 | `n` | Next file |
 | `p` | Previous file |
+| `Ctrl-F` / `Ctrl-B` | Scroll full page down / up |
+| `Ctrl-D` / `Ctrl-U` | Scroll half page down / up |
 | `?` | Toggle help |
 | `c` | Comment on hunk |
 | `q` / `Esc` | Quit |
@@ -42,6 +44,22 @@ To remove:
 
 ```bash
 sight uninstall-hook
+```
+
+### Cursor Integration
+
+Install a Cursor hook so annotations are automatically fed as context in your next message:
+
+```bash
+sight install-cursor-hook
+```
+
+This adds a `beforeSubmitPrompt` hook to `~/.cursor/hooks.json`. When you quit sight after annotating, the next message you send in Cursor will include your annotations.
+
+To remove:
+
+```bash
+sight uninstall-cursor-hook
 ```
 
 ## Development
