@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fileutils"
+
 module Sight
   module Git
     module_function
@@ -18,6 +20,23 @@ module Sight
 
     def file_content(path)
       File.read(path, mode: "rb")
+    end
+
+    def repo_dir
+      output, success = run_cmd(["git", "rev-parse", "--git-dir"])
+      raise Error, "not a git repository" unless success
+      output.strip
+    end
+
+    def save_pending_review(content)
+      dir = File.join(repo_dir, "sight")
+      FileUtils.mkdir_p(dir)
+      File.write(File.join(dir, "pending-review"), content)
+    end
+
+    def clear_pending_review
+      path = File.join(repo_dir, "sight", "pending-review")
+      File.delete(path) if File.exist?(path)
     end
 
     def run_cmd(cmd, err: IO::NULL)

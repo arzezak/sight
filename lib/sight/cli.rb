@@ -11,7 +11,9 @@ module Sight
         puts
         puts "Keys: j/k hunks, n/p files, c comment, ? help, q quit"
         puts
-        puts "Annotations are printed to stdout on quit."
+        puts "Subcommands:"
+        puts "  install-hook     Install Claude Code hook for annotations"
+        puts "  uninstall-hook   Remove Claude Code hook"
         return
       end
 
@@ -19,6 +21,23 @@ module Sight
         puts "sight #{VERSION}"
         return
       end
+
+      if argv.include?("install-hook")
+        HookInstaller.install
+        return
+      end
+
+      if argv.include?("uninstall-hook")
+        HookInstaller.uninstall
+        return
+      end
+
+      if argv.include?("hook-run")
+        run_hook
+        return
+      end
+
+      Git.clear_pending_review
 
       raw = Git.diff
       files = DiffParser.parse(raw)
@@ -38,8 +57,25 @@ module Sight
       app.run
 
       unless app.annotations.empty?
-        puts AnnotationFormatter.format(app.annotations)
+        formatted = AnnotationFormatter.format(app.annotations)
+        puts formatted
+        Git.save_pending_review(formatted)
       end
+    end
+
+    def run_hook
+      git_dir = Git.repo_dir
+    rescue Error
+      nil
+    else
+      file = File.join(git_dir, "sight", "pending-review")
+      return unless File.exist?(file)
+
+      content = File.read(file)
+      puts "The user has just finished reviewing your code changes in sight. Here are their annotations:"
+      puts
+      puts content
+      File.delete(file)
     end
   end
 end

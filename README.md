@@ -28,6 +28,22 @@ sight
 | `c` | Comment on hunk |
 | `q` / `Esc` | Quit |
 
+### Claude Code Integration
+
+Install a Claude Code hook so annotations are automatically fed as context in your next message:
+
+```bash
+sight install-hook
+```
+
+This adds a `UserPromptSubmit` hook to `~/.config/claude/settings.json`. When you quit sight after annotating, the next message you send in Claude Code will include your annotations.
+
+To remove:
+
+```bash
+sight uninstall-hook
+```
+
 ## Development
 
 ```bash

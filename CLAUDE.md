@@ -21,6 +21,8 @@ TUI for closing the loop on AI-generated code changes — browse diffs, jump bet
 
 **App** renders per-file views with hunk-based navigation (j/k). Active hunk is highlighted; inactive hunks render in dark gray (color pair 5, color 240).
 
+**Hook system**: `HookInstaller` manages a Claude Code `UserPromptSubmit` hook in `~/.config/claude/settings.json`. The hook runs `sight hook-run`, which reads `.git/sight/pending-review`, prints annotations to stdout (injected as context), and deletes the file. CLI subcommands: `install-hook`, `uninstall-hook`, `hook-run` (hidden).
+
 ## Conventions
 
 - Ruby >= 3.2, uses `frozen_string_literal` in all files
