@@ -3,7 +3,7 @@
 module Sight
   DiffLine = Struct.new(:type, :content, :lineno, :old_lineno, keyword_init: true)
   Hunk = Struct.new(:context, :lines, keyword_init: true)
-  DiffFile = Struct.new(:path, :hunks, keyword_init: true)
+  DiffFile = Struct.new(:path, :hunks, :status, keyword_init: true)
 
   module DiffParser
     module_function
@@ -19,10 +19,14 @@ module Sight
         if line.start_with?("diff --git ")
           current_hunk = nil
           path = line.split(" b/", 2).last
-          current_file = DiffFile.new(path: path, hunks: [])
+          current_file = DiffFile.new(path: path, hunks: [], status: :modified)
           files << current_file
         elsif current_file.nil?
           next
+        elsif line.start_with?("new file mode")
+          current_file.status = :added
+        elsif line.start_with?("deleted file mode")
+          current_file.status = :deleted
         elsif line.start_with?("@@ ")
           context, new_start, old_start = parse_hunk_header(line)
           new_lineno = new_start
@@ -46,6 +50,14 @@ module Sight
       end
 
       files
+    end
+
+    def build_untracked(path, content)
+      lines = content.lines(chomp: true).each_with_index.map do |text, i|
+        DiffLine.new(type: :add, content: "+#{text}", lineno: i + 1, old_lineno: nil)
+      end
+      hunk = Hunk.new(context: nil, lines: lines)
+      DiffFile.new(path: path, hunks: [hunk], status: :untracked)
     end
 
     def parse_hunk_header(line)

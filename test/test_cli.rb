@@ -25,10 +25,12 @@ class TestCLI < Minitest::Test
     assert_includes out, Sight::VERSION
   end
 
-  def test_empty_diff
+  def test_no_changes
     Sight::Git.stub(:diff, "") do
-      _, err = capture_io { Sight::CLI.run([]) }
-      assert_includes err, "No diff output"
+      Sight::Git.stub(:untracked_files, []) do
+        _, err = capture_io { Sight::CLI.run([]) }
+        assert_includes err, "No changes"
+      end
     end
   end
 
@@ -36,19 +38,21 @@ class TestCLI < Minitest::Test
     received_files = nil
 
     Sight::Git.stub(:diff, sample_diff) do
-      mock_app = Minitest::Mock.new
-      mock_app.expect(:run, nil)
-      mock_app.expect(:annotations, [])
+      Sight::Git.stub(:untracked_files, []) do
+        mock_app = Minitest::Mock.new
+        mock_app.expect(:run, nil)
+        mock_app.expect(:annotations, [])
 
-      Sight::App.stub(:new, ->(files) {
-        received_files = files
-        mock_app
-      }) do
-        Sight::CLI.run([])
+        Sight::App.stub(:new, ->(files) {
+          received_files = files
+          mock_app
+        }) do
+          Sight::CLI.run([])
+        end
+
+        assert_equal 1, received_files.size
+        mock_app.verify
       end
-
-      assert_equal 1, received_files.size
-      mock_app.verify
     end
   end
 
@@ -61,18 +65,46 @@ class TestCLI < Minitest::Test
     )
 
     Sight::Git.stub(:diff, sample_diff) do
-      mock_app = Minitest::Mock.new
-      mock_app.expect(:run, nil)
-      mock_app.expect(:annotations, [ann])
-      mock_app.expect(:annotations, [ann])
+      Sight::Git.stub(:untracked_files, []) do
+        mock_app = Minitest::Mock.new
+        mock_app.expect(:run, nil)
+        mock_app.expect(:annotations, [ann])
+        mock_app.expect(:annotations, [ann])
 
-      Sight::App.stub(:new, ->(_files) { mock_app }) do
-        out, = capture_io { Sight::CLI.run([]) }
-        assert_includes out, "## File: foo.rb"
-        assert_includes out, "> fix this"
+        Sight::App.stub(:new, ->(_files) { mock_app }) do
+          out, = capture_io { Sight::CLI.run([]) }
+          assert_includes out, "## File: foo.rb"
+          assert_includes out, "> fix this"
+        end
+
+        mock_app.verify
       end
+    end
+  end
 
-      mock_app.verify
+  def test_untracked_files_appended
+    received_files = nil
+
+    Sight::Git.stub(:diff, sample_diff) do
+      Sight::Git.stub(:untracked_files, ["new.rb"]) do
+        Sight::Git.stub(:file_content, "hello\n") do
+          mock_app = Minitest::Mock.new
+          mock_app.expect(:run, nil)
+          mock_app.expect(:annotations, [])
+
+          Sight::App.stub(:new, ->(files) {
+            received_files = files
+            mock_app
+          }) do
+            Sight::CLI.run([])
+          end
+
+          assert_equal 2, received_files.size
+          assert_equal :untracked, received_files[1].status
+          assert_equal "new.rb", received_files[1].path
+          mock_app.verify
+        end
+      end
     end
   end
 

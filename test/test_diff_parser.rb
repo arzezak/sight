@@ -66,6 +66,40 @@ class TestDiffParser < Minitest::Test
     assert(f.hunks[0].lines.all? { |l| l.type == :add })
   end
 
+  def test_modified_file_status
+    assert_equal :modified, @files[0].status
+  end
+
+  def test_added_file_status
+    assert_equal :added, @files[1].status
+  end
+
+  def test_deleted_file_status
+    diff = <<~DIFF
+      diff --git a/gone.rb b/gone.rb
+      deleted file mode 100644
+      --- a/gone.rb
+      +++ /dev/null
+      @@ -1,2 +0,0 @@
+      -line1
+      -line2
+    DIFF
+    files = Sight::DiffParser.parse(diff)
+    assert_equal :deleted, files[0].status
+  end
+
+  def test_build_untracked
+    file = Sight::DiffParser.build_untracked("new.rb", "hello\nworld\n")
+    assert_equal "new.rb", file.path
+    assert_equal :untracked, file.status
+    assert_equal 1, file.hunks.size
+    assert_equal 2, file.hunks[0].lines.size
+    assert(file.hunks[0].lines.all? { |l| l.type == :add })
+    assert_equal "+hello", file.hunks[0].lines[0].content
+    assert_equal 1, file.hunks[0].lines[0].lineno
+    assert_equal 2, file.hunks[0].lines[1].lineno
+  end
+
   def test_empty_input
     assert_equal [], Sight::DiffParser.parse("")
   end

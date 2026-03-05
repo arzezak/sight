@@ -21,12 +21,19 @@ module Sight
       end
 
       raw = Git.diff
-      if raw.empty?
-        warn "No diff output"
+      files = DiffParser.parse(raw)
+
+      Git.untracked_files.each do |path|
+        content = Git.file_content(path)
+        next unless content.valid_encoding? && !content.include?("\x00")
+        files << DiffParser.build_untracked(path, content)
+      end
+
+      if files.empty?
+        warn "No changes"
         return
       end
 
-      files = DiffParser.parse(raw)
       app = App.new(files)
       app.run
 

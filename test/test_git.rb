@@ -14,4 +14,16 @@ class TestGit < Minitest::Test
       assert_raises(Sight::Error) { Sight::Git.diff }
     end
   end
+
+  def test_untracked_files
+    Sight::Git.stub(:run_cmd, ["foo.rb\nbar.rb\n", true]) do
+      assert_equal ["foo.rb", "bar.rb"], Sight::Git.untracked_files
+    end
+  end
+
+  def test_untracked_files_on_failure
+    Sight::Git.stub(:run_cmd, ["", false]) do
+      assert_equal [], Sight::Git.untracked_files
+    end
+  end
 end

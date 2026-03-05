@@ -70,9 +70,18 @@ module Sight
     end
 
     def render_header(win, width)
-      path = files[file_idx].path
+      file = files[file_idx]
+      badge = "[#{file.status || :modified}]"
+      path = file.path
+      gap = width - path.length - badge.length
       win.setpos(0, 0)
-      win.attron(color_for(:header)) { win.addstr(path[0, width]) }
+      win.attron(color_for(:header)) do
+        if gap >= 1
+          win.addstr("#{path}#{" " * gap}#{badge}"[0, width])
+        else
+          win.addstr(path[0, width])
+        end
+      end
       win.setpos(1, 0)
       win.attron(color_for(:header)) { win.addstr("\u2500" * width) }
     end
