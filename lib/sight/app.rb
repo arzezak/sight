@@ -98,13 +98,21 @@ module Sight
         lines.size
       end
 
+      commented_lines = commented_hunk_lines
+
       scroll_height.times do |row|
         idx = offset + row
         break if idx >= lines.size
         line = lines[idx]
         win.setpos(row + 2, 0)
         active = idx >= selected_start && idx < selected_end
-        win.attron(dim) { win.addstr("#{format_gutter(line.type, line.lineno, gutter)} \u2502 ") }
+        gutter_str = format_gutter(line.type, line.lineno, gutter)
+        commented = commented_lines.include?(idx)
+        separator = commented ? "\u2503" : "\u2502"
+        sep_attr = commented ? Curses.color_pair(4) : dim
+        win.attron(dim) { win.addstr("#{gutter_str} ") }
+        win.attron(sep_attr) { win.addstr(separator) }
+        win.attron(dim) { win.addstr(" ") }
         attr = active ? color_for(line.type) : Curses.color_pair(5)
         win.attron(attr) { win.addstr(line.text[0, content_width]) }
       end
@@ -118,7 +126,8 @@ module Sight
         else
           ((offset + scroll_height) * 100.0 / lines.size).ceil.clamp(0, 100)
         end
-        status = " File #{file_idx + 1}/#{files.size} | Hunk #{hunk_idx + 1}/#{hunk_offsets.size} | #{percent}% "
+        commented = hunk_commented?(file_idx, hunk_idx) ? " [commented]" : ""
+        status = " File #{file_idx + 1}/#{files.size} | Hunk #{hunk_idx + 1}/#{hunk_offsets.size}#{commented} | #{percent}% "
         win.addstr(status.ljust(width))
       end
     end
@@ -300,6 +309,22 @@ module Sight
         end
         offsets
       end
+    end
+
+    def hunk_commented?(file_index, hunk_index)
+      path = files[file_index].path
+      hunk = files[file_index].hunks[hunk_index]
+      annotations.any? { |a| a.file_path == path && a.hunk.equal?(hunk) }
+    end
+
+    def commented_hunk_lines
+      result = []
+      hunk_offsets.each_with_index do |offset, hunk_index|
+        next unless hunk_commented?(file_idx, hunk_index)
+        hunk_end = (hunk_index + 1 < hunk_offsets.size) ? hunk_offsets[hunk_index + 1] : lines.size
+        (offset...hunk_end).each { |i| result << i }
+      end
+      result
     end
 
     def scroll(delta)
