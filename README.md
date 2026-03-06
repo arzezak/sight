@@ -41,6 +41,8 @@ sight install-hook cursor   # Cursor (~/.cursor/hooks.json)
 
 When you quit sight after annotating, the next message you send will include your annotations.
 
+The hook runs on every prompt but is a no-op when there's no pending review — it produces no output and adds nothing to the agent's context.
+
 To remove:
 
 ```bash
