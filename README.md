@@ -34,9 +34,16 @@ sight
 
 Install a hook so annotations are automatically fed as context in your next message:
 
+**Claude Code** (~/.config/claude/settings.json):
+
 ```bash
-sight install-hook claude   # Claude Code (~/.config/claude/settings.json)
-sight install-hook cursor   # Cursor (~/.cursor/hooks.json)
+sight install-hook claude
+```
+
+**Cursor** (~/.cursor/hooks.json):
+
+```bash
+sight install-hook cursor
 ```
 
 When you quit sight after annotating, the next message you send will include your annotations.
@@ -45,8 +52,15 @@ The hook runs on every prompt but is a no-op when there's no pending review — 
 
 To remove:
 
+**Claude Code:**
+
 ```bash
 sight uninstall-hook claude
+```
+
+**Cursor:**
+
+```bash
 sight uninstall-hook cursor
 ```
 
