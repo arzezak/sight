@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "json"
-
 module Sight
   module CLI
     module_function
@@ -14,8 +12,8 @@ module Sight
         puts "Keys: j/k hunks, n/p files, c comment, ? help, q quit"
         puts
         puts "Subcommands:"
-        puts "  install-hook <agent>    Install hook (claude, cursor)"
-        puts "  uninstall-hook <agent>  Remove hook (claude, cursor)"
+        puts "  install-hook <agent>    Install hook (claude)"
+        puts "  uninstall-hook <agent>  Remove hook (claude)"
         return
       end
 
@@ -36,11 +34,6 @@ module Sight
 
       if argv.include?("hook-run")
         run_hook
-        return
-      end
-
-      if argv.include?("cursor-hook-run")
-        run_cursor_hook
         return
       end
 
@@ -71,14 +64,13 @@ module Sight
     end
 
     AGENTS = {
-      "claude" => ClaudeHookInstaller,
-      "cursor" => CursorHookInstaller
+      "claude" => ClaudeHookInstaller
     }.freeze
 
     def install_hook(agent)
       installer = AGENTS[agent]
       unless installer
-        warn "Unknown agent: #{agent.inspect}. Use: claude, cursor"
+        warn "Unknown agent: #{agent.inspect}. Use: claude"
         return
       end
       installer.install
@@ -87,7 +79,7 @@ module Sight
     def uninstall_hook(agent)
       installer = AGENTS[agent]
       unless installer
-        warn "Unknown agent: #{agent.inspect}. Use: claude, cursor"
+        warn "Unknown agent: #{agent.inspect}. Use: claude"
         return
       end
       installer.uninstall
@@ -105,21 +97,6 @@ module Sight
       puts "The user has just finished reviewing your code changes in sight. Here are their annotations:"
       puts
       puts content
-      File.delete(file)
-    end
-
-    def run_cursor_hook
-      $stdin.read
-      git_dir = Git.repo_dir
-    rescue Error
-      nil
-    else
-      file = File.join(git_dir, "sight", "pending-review")
-      return unless File.exist?(file)
-
-      content = File.read(file)
-      message = "The user has just finished reviewing your code changes in sight. Here are their annotations:\n\n#{content}"
-      puts JSON.generate(user_message: message)
       File.delete(file)
     end
   end

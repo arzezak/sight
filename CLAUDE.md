@@ -24,10 +24,9 @@ Untracked files are added via `Git.untracked_files` → `DiffParser.build_untrac
 
 **App** renders per-file views with hunk-based navigation (j/k). Active hunk is highlighted; inactive hunks render in dark gray (color pair 5, color 240).
 
-**Hook system**: Unified via `sight install-hook <agent>` / `sight uninstall-hook <agent>` (agent: `claude` or `cursor`).
+**Hook system**: `sight install-hook claude` / `sight uninstall-hook claude`.
 `ClaudeHookInstaller` manages a Claude Code `UserPromptSubmit` hook in `~/.config/claude/settings.json`.
-`CursorHookInstaller` manages a Cursor `beforeSubmitPrompt` hook in `~/.cursor/hooks.json`.
-Both read `.git/sight/pending-review`, output annotations, and delete the file. Hidden subcommands: `hook-run`, `cursor-hook-run`.
+Reads `.git/sight/pending-review`, outputs annotations, and deletes the file. Hidden subcommand: `hook-run`.
 
 ## Conventions
 

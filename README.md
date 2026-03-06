@@ -40,28 +40,25 @@ Install a hook so annotations are automatically fed as context in your next mess
 sight install-hook claude
 ```
 
-**Cursor** (~/.cursor/hooks.json):
-
-```bash
-sight install-hook cursor
-```
-
 When you quit sight after annotating, the next message you send will include your annotations.
 
 The hook runs on every prompt but is a no-op when there's no pending review — it produces no output and adds nothing to the agent's context.
 
 To remove:
 
-**Claude Code:**
-
 ```bash
 sight uninstall-hook claude
 ```
 
-**Cursor:**
+**Cursor** — Create a rule in `.cursor/rules/sight.mdc`:
 
-```bash
-sight uninstall-hook cursor
+```markdown
+---
+description: When the user asks to review their sight annotations or code review comments
+alwaysApply: false
+---
+
+Read `.git/sight/pending-review`, address the annotations, then delete the file.
 ```
 
 ## Development

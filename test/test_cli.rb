@@ -47,87 +47,9 @@ class TestCLI < Minitest::Test
     assert called
   end
 
-  def test_install_hook_cursor
-    called = false
-    Sight::CursorHookInstaller.stub(:install, -> { called = true }) do
-      Sight::CLI.run(["install-hook", "cursor"])
-    end
-    assert called
-  end
-
-  def test_uninstall_hook_cursor
-    called = false
-    Sight::CursorHookInstaller.stub(:uninstall, -> { called = true }) do
-      Sight::CLI.run(["uninstall-hook", "cursor"])
-    end
-    assert called
-  end
-
   def test_install_hook_unknown_agent
     _, err = capture_io { Sight::CLI.run(["install-hook", "vim"]) }
     assert_includes err, "Unknown agent"
-  end
-
-  def test_cursor_hook_run_with_pending_review
-    Dir.mktmpdir do |dir|
-      sight_dir = File.join(dir, "sight")
-      FileUtils.mkdir_p(sight_dir)
-      File.write(File.join(sight_dir, "pending-review"), "annotation content")
-
-      Sight::Git.stub(:repo_dir, dir) do
-        stdin_r, stdin_w = IO.pipe
-        stdin_w.write('{"prompt":"hello"}')
-        stdin_w.close
-        original_stdin = $stdin
-        $stdin = stdin_r
-
-        out, = capture_io { Sight::CLI.run(["cursor-hook-run"]) }
-
-        $stdin = original_stdin
-        stdin_r.close
-
-        parsed = JSON.parse(out)
-        assert_includes parsed["user_message"], "annotations"
-        assert_includes parsed["user_message"], "annotation content"
-        refute File.exist?(File.join(sight_dir, "pending-review"))
-      end
-    end
-  end
-
-  def test_cursor_hook_run_without_pending_review
-    Dir.mktmpdir do |dir|
-      Sight::Git.stub(:repo_dir, dir) do
-        stdin_r, stdin_w = IO.pipe
-        stdin_w.write("{}")
-        stdin_w.close
-        original_stdin = $stdin
-        $stdin = stdin_r
-
-        out, = capture_io { Sight::CLI.run(["cursor-hook-run"]) }
-
-        $stdin = original_stdin
-        stdin_r.close
-
-        assert_empty out
-      end
-    end
-  end
-
-  def test_cursor_hook_run_not_in_git_repo
-    Sight::Git.stub(:repo_dir, -> { raise Sight::Error, "not a git repository" }) do
-      stdin_r, stdin_w = IO.pipe
-      stdin_w.write("{}")
-      stdin_w.close
-      original_stdin = $stdin
-      $stdin = stdin_r
-
-      out, = capture_io { Sight::CLI.run(["cursor-hook-run"]) }
-
-      $stdin = original_stdin
-      stdin_r.close
-
-      assert_empty out
-    end
   end
 
   def test_hook_run_with_pending_review

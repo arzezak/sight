@@ -7,7 +7,6 @@ require_relative "sight/git"
 require_relative "sight/annotation"
 require_relative "sight/annotation_formatter"
 require_relative "sight/claude_hook_installer"
-require_relative "sight/cursor_hook_installer"
 require_relative "sight/cli"
 require_relative "sight/app"
 
