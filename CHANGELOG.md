@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0] - 2026-03-06
+
+### Added
+
+- Untracked file support with file status badges (new, modified, deleted)
+- Color-coded status badges in file header
+- Ctrl-f/b/d/u scroll navigation
+- Scroll percentage indicator replacing line counter
+- Hook system for AI agent integration (`sight install-hook <agent>`)
+  - Claude Code hook via `UserPromptSubmit`
+  - Cursor hook via `beforeSubmitPrompt`
+- Highlighted commented hunks in gutter and status bar
+
 ## [0.3.0] - 2026-03-04
 
 ### Added
