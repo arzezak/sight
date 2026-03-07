@@ -250,9 +250,7 @@ module Sight
 
     def prompt_comment(title)
       win = Curses.stdscr
-      max_width = 80
-      width = [Curses.cols * 2 / 3, 50].max
-      width = [width, max_width].min
+      width = (Curses.cols * 2 / 3).clamp(50, 80)
       height = 5
       top = (Curses.lines - height) / 2
       left = (Curses.cols - width) / 2
