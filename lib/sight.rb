@@ -8,6 +8,7 @@ require_relative "sight/cli"
 require_relative "sight/diff_parser"
 require_relative "sight/display_line"
 require_relative "sight/git"
+require_relative "sight/summary"
 require_relative "sight/version"
 
 module Sight

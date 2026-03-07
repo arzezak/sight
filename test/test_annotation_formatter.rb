@@ -52,24 +52,6 @@ class TestAnnotationFormatter < Minitest::Test
     assert_includes formatter.format, "## File: bar.rb"
   end
 
-  def test_summary_single
-    formatter = Sight::AnnotationFormatter.new(
-      [make_annotation("foo.rb", "ok")]
-    )
-
-    assert_equal "1 annotation on 1 file", formatter.summary
-  end
-
-  def test_summary_plural
-    formatter = Sight::AnnotationFormatter.new([
-      make_annotation("foo.rb", "first"),
-      make_annotation("foo.rb", "second"),
-      make_annotation("bar.rb", "third")
-    ])
-
-    assert_equal "3 annotations on 2 files", formatter.summary
-  end
-
   private
 
   def make_annotation(file_path, comment, lines: [
