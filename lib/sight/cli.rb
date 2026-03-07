@@ -49,8 +49,8 @@ module Sight
 
       unless app.annotations.empty?
         formatted = AnnotationFormatter.format(app.annotations)
-        puts formatted
         Git.save_pending_review(formatted)
+        puts AnnotationFormatter.summary(app.annotations)
       end
     end
 

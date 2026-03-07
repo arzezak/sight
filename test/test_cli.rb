@@ -136,11 +136,11 @@ class TestCLI < Minitest::Test
             mock_app.expect(:run, nil)
             mock_app.expect(:annotations, [ann])
             mock_app.expect(:annotations, [ann])
+            mock_app.expect(:annotations, [ann])
 
             Sight::App.stub(:new, ->(_files) { mock_app }) do
               out, = capture_io { Sight::CLI.run([]) }
-              assert_includes out, "## File: foo.rb"
-              assert_includes out, "> fix this"
+              assert_includes out, "1 annotation on 1 file"
             end
 
             assert_includes saved_content, "## File: foo.rb"

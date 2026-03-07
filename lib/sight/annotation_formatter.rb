@@ -11,6 +11,11 @@ module Sight
       grouped.map { |path, file_annotations| format_file(path, file_annotations) }.join("\n")
     end
 
+    def summary(annotations)
+      file_count = annotations.map(&:file_path).uniq.size
+      "#{annotations.size} #{(annotations.size == 1) ? "annotation" : "annotations"} on #{file_count} #{(file_count == 1) ? "file" : "files"}"
+    end
+
     def format_file(path, annotations)
       out = "## File: #{path}\n\n"
       annotations.each do |annotation|
