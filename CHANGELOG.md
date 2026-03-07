@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0] - 2026-03-07
+
+### Removed
+
+- Cursor hook support (use Cursor rules instead)
+
+### Changed
+
+- Refactored CLI dispatch to use case statement with extracted `open` and `print_help` methods
+- DRYed up install/uninstall hook agent lookup
+- Use `Set` for commented hunk lines lookup
+- Extracted `hunk_end_offset` to deduplicate boundary logic
+- Use `<<` for string building in `AnnotationFormatter`
+- Simplified prompt comment width clamping
+
 ## [0.4.0] - 2026-03-06
 
 ### Added
