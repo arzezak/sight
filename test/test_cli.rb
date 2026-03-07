@@ -136,7 +136,6 @@ class TestCLI < Minitest::Test
             mock_app.expect(:run, nil)
             mock_app.expect(:annotations, [ann])
             mock_app.expect(:annotations, [ann])
-            mock_app.expect(:annotations, [ann])
 
             Sight::App.stub(:new, ->(_files) { mock_app }) do
               out, = capture_io { Sight::CLI.run([]) }

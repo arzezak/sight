@@ -48,9 +48,9 @@ module Sight
       app.run
 
       unless app.annotations.empty?
-        formatted = AnnotationFormatter.format(app.annotations)
-        Git.save_pending_review(formatted)
-        puts AnnotationFormatter.summary(app.annotations)
+        formatter = AnnotationFormatter.new(app.annotations)
+        Git.save_pending_review(formatter.format)
+        puts formatter.summary
       end
     end
 

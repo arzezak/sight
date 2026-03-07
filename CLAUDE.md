@@ -33,4 +33,5 @@ Reads `.git/sight/pending-review`, outputs annotations, and deletes the file. Hi
 - Ruby >= 3.2, uses `frozen_string_literal` in all files
 - Linter: StandardRB (ruby_version: 3.4 in `.standard.yml`)
 - Tests: Minitest with stubs/mocks, no test framework beyond minitest
+- In tests, assign the subject under test to a local before asserting on it
 - Single runtime dependency: `curses ~1.4`
