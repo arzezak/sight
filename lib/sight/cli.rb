@@ -5,38 +5,29 @@ module Sight
     module_function
 
     def run(argv)
-      if argv.include?("--help") || argv.include?("-h")
-        puts "Usage: sight"
-        puts "Interactive git diff viewer (staged + unstaged)"
-        puts
-        puts "Keys: j/k hunks, n/p files, c comment, ? help, q quit"
-        puts
-        puts "Subcommands:"
-        puts "  install-hook <agent>    Install hook (claude)"
-        puts "  uninstall-hook <agent>  Remove hook (claude)"
-        return
-      end
+      return print_help if argv.include?("--help") || argv.include?("-h")
+      return puts("sight #{VERSION}") if argv.include?("--version") || argv.include?("-v")
 
-      if argv.include?("--version") || argv.include?("-v")
-        puts "sight #{VERSION}"
-        return
+      case argv[0]
+      when "install-hook" then install_hook(argv[1])
+      when "uninstall-hook" then uninstall_hook(argv[1])
+      when "hook-run" then run_hook
+      else open
       end
+    end
 
-      if argv[0] == "install-hook"
-        install_hook(argv[1])
-        return
-      end
+    def print_help
+      puts "Usage: sight"
+      puts "Interactive git diff viewer (staged + unstaged)"
+      puts
+      puts "Keys: j/k hunks, n/p files, c comment, ? help, q quit"
+      puts
+      puts "Subcommands:"
+      puts "  install-hook <agent>    Install hook (claude)"
+      puts "  uninstall-hook <agent>  Remove hook (claude)"
+    end
 
-      if argv[0] == "uninstall-hook"
-        uninstall_hook(argv[1])
-        return
-      end
-
-      if argv.include?("hook-run")
-        run_hook
-        return
-      end
-
+    def open
       Git.clear_pending_review
 
       raw = Git.diff
