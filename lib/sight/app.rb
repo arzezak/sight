@@ -92,11 +92,7 @@ module Sight
       content_width = width - gutter - 3
 
       selected_start = hunk_offsets[hunk_idx]
-      selected_end = if hunk_idx + 1 < hunk_offsets.size
-        hunk_offsets[hunk_idx + 1]
-      else
-        lines.size
-      end
+      selected_end = hunk_end_offset(hunk_idx)
 
       commented_lines = commented_hunk_lines
 
@@ -311,6 +307,10 @@ module Sight
       end
     end
 
+    def hunk_end_offset(idx)
+      (idx + 1 < hunk_offsets.size) ? hunk_offsets[idx + 1] : lines.size
+    end
+
     def hunk_commented?(file_index, hunk_index)
       path = files[file_index].path
       hunk = files[file_index].hunks[hunk_index]
@@ -318,13 +318,10 @@ module Sight
     end
 
     def commented_hunk_lines
-      result = Set.new
-      hunk_offsets.each_with_index do |offset, hunk_index|
+      hunk_offsets.each_with_index.each_with_object(Set.new) do |(offset, hunk_index), set|
         next unless hunk_commented?(file_idx, hunk_index)
-        hunk_end = (hunk_index + 1 < hunk_offsets.size) ? hunk_offsets[hunk_index + 1] : lines.size
-        (offset...hunk_end).each { |i| result << i }
+        (offset...hunk_end_offset(hunk_index)).each { |i| set << i }
       end
-      result
     end
 
     def scroll(delta)

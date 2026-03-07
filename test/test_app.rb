@@ -41,6 +41,16 @@ class TestApp < Minitest::Test
     assert_equal [0, 1], offsets
   end
 
+  def test_hunk_end_offset_middle
+    app = Sight::App.new([make_multi_hunk_file])
+    assert_equal 1, app.send(:hunk_end_offset, 0)
+  end
+
+  def test_hunk_end_offset_last
+    app = Sight::App.new([make_multi_hunk_file])
+    assert_equal 3, app.send(:hunk_end_offset, 1)
+  end
+
   def test_hunk_offsets_cached
     app = Sight::App.new([make_multi_hunk_file])
     first = app.send(:hunk_offsets)
