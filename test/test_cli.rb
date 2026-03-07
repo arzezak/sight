@@ -5,30 +5,35 @@ require "minitest/mock"
 
 class TestCLI < Minitest::Test
   def test_help_flag
-    out, = capture_io { Sight::CLI.run(["--help"]) }
-    assert_includes out, "Usage: sight"
-    assert_includes out, "hunks"
+    output, = capture_io { Sight::CLI.run(["--help"]) }
+
+    assert_includes output, "Usage: sight"
+    assert_includes output, "hunks"
   end
 
   def test_help_short_flag
-    out, = capture_io { Sight::CLI.run(["-h"]) }
-    assert_includes out, "Usage: sight"
+    output, = capture_io { Sight::CLI.run(["-h"]) }
+
+    assert_includes output, "Usage: sight"
   end
 
   def test_version_flag
-    out, = capture_io { Sight::CLI.run(["--version"]) }
-    assert_includes out, Sight::VERSION
+    output, = capture_io { Sight::CLI.run(["--version"]) }
+
+    assert_includes output, Sight::VERSION
   end
 
   def test_version_short_flag
-    out, = capture_io { Sight::CLI.run(["-v"]) }
-    assert_includes out, Sight::VERSION
+    output, = capture_io { Sight::CLI.run(["-v"]) }
+
+    assert_includes output, Sight::VERSION
   end
 
   def test_help_includes_subcommands
-    out, = capture_io { Sight::CLI.run(["--help"]) }
-    assert_includes out, "install-hook"
-    assert_includes out, "uninstall-hook"
+    output, = capture_io { Sight::CLI.run(["--help"]) }
+
+    assert_includes output, "install-hook"
+    assert_includes output, "uninstall-hook"
   end
 
   def test_install_hook_claude
@@ -36,20 +41,24 @@ class TestCLI < Minitest::Test
     Sight::ClaudeHookInstaller.stub(:install, -> { called = true }) do
       Sight::CLI.run(["install-hook", "claude"])
     end
+
     assert called
   end
 
   def test_uninstall_hook_claude
     called = false
+
     Sight::ClaudeHookInstaller.stub(:uninstall, -> { called = true }) do
       Sight::CLI.run(["uninstall-hook", "claude"])
     end
+
     assert called
   end
 
   def test_install_hook_unknown_agent
-    _, err = capture_io { Sight::CLI.run(["install-hook", "vim"]) }
-    assert_includes err, "Unknown agent"
+    _, error = capture_io { Sight::CLI.run(["install-hook", "vim"]) }
+
+    assert_includes error, "Unknown agent"
   end
 
   def test_hook_run_with_pending_review
@@ -59,27 +68,30 @@ class TestCLI < Minitest::Test
       File.write(File.join(sight_dir, "pending-review"), "annotation content")
 
       Sight::Git.stub(:repo_dir, dir) do
-        out, = capture_io { Sight::CLI.run(["hook-run"]) }
-        assert_includes out, "annotations"
-        assert_includes out, "annotation content"
+        output, = capture_io { Sight::CLI.run(["hook-run"]) }
+
+        assert_includes output, "annotations"
+        assert_includes output, "annotation content"
         refute File.exist?(File.join(sight_dir, "pending-review"))
       end
     end
   end
 
-  def test_hook_run_without_pending_review
+  def test_hook_run_withoutput_pending_review
     Dir.mktmpdir do |dir|
       Sight::Git.stub(:repo_dir, dir) do
-        out, = capture_io { Sight::CLI.run(["hook-run"]) }
-        assert_empty out
+        output, = capture_io { Sight::CLI.run(["hook-run"]) }
+
+        assert_empty output
       end
     end
   end
 
   def test_hook_run_not_in_git_repo
     Sight::Git.stub(:repo_dir, -> { raise Sight::Error, "not a git repository" }) do
-      out, = capture_io { Sight::CLI.run(["hook-run"]) }
-      assert_empty out
+      output, = capture_io { Sight::CLI.run(["hook-run"]) }
+
+      assert_empty output
     end
   end
 
@@ -88,6 +100,7 @@ class TestCLI < Minitest::Test
       Sight::Git.stub(:untracked_files, []) do
         Sight::Git.stub(:clear_pending_review, nil) do
           _, err = capture_io { Sight::CLI.run([]) }
+
           assert_includes err, "No changes"
         end
       end
@@ -118,29 +131,33 @@ class TestCLI < Minitest::Test
     end
   end
 
-  def test_annotations_output_on_quit
-    hunk = Sight::Hunk.new(context: "def foo", lines: [
-      Sight::DiffLine.new(type: :add, content: "+new", lineno: 1)
-    ])
-    ann = Sight::Annotation.new(
-      file_path: "foo.rb", type: :hunk, hunk: hunk, comment: "fix this"
+  def test_annotations_outputput_on_quit
+    annotation = Sight::Annotation.new(
+      file_path: "foo.rb",
+      type: :hunk,
+      hunk: Sight::Hunk.new(context: "def foo", lines: [
+        Sight::DiffLine.new(type: :add, content: "+new", lineno: 1)
+      ]),
+      comment: "fix this"
     )
-
     saved_content = nil
 
     Sight::Git.stub(:diff, sample_diff) do
       Sight::Git.stub(:untracked_files, []) do
         Sight::Git.stub(:clear_pending_review, nil) do
-          Sight::Git.stub(:save_pending_review, ->(content) { saved_content = content }) do
+          Sight::Git.stub(
+            :save_pending_review, ->(content) { saved_content = content }
+          ) do
             mock_app = Minitest::Mock.new
             mock_app.expect(:run, nil)
-            mock_app.expect(:annotations, [ann])
-            mock_app.expect(:annotations, [ann])
-            mock_app.expect(:annotations, [ann])
+            mock_app.expect(:annotations, [annotation])
+            mock_app.expect(:annotations, [annotation])
+            mock_app.expect(:annotations, [annotation])
 
             Sight::App.stub(:new, ->(_files) { mock_app }) do
-              out, = capture_io { Sight::CLI.run([]) }
-              assert_includes out, "1 annotation on 1 file"
+              output, = capture_io { Sight::CLI.run([]) }
+
+              assert_includes output, "1 annotation on 1 file"
             end
 
             assert_includes saved_content, "## File: foo.rb"
