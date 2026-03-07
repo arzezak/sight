@@ -68,21 +68,15 @@ module Sight
     }.freeze
 
     def install_hook(agent)
-      installer = AGENTS[agent]
-      unless installer
-        warn "Unknown agent: #{agent.inspect}. Use: claude"
-        return
-      end
-      installer.install
+      resolve_installer(agent)&.install
     end
 
     def uninstall_hook(agent)
-      installer = AGENTS[agent]
-      unless installer
-        warn "Unknown agent: #{agent.inspect}. Use: claude"
-        return
-      end
-      installer.uninstall
+      resolve_installer(agent)&.uninstall
+    end
+
+    def resolve_installer(agent)
+      AGENTS.fetch(agent) { warn "Unknown agent: #{agent.inspect}. Use: claude" }
     end
 
     def run_hook
