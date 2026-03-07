@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-TUI for closing the loop on AI-generated code changes — browse diffs, jump between hunks, and annotate them. Entry point: `exe/sight` → `CLI.run` → `App.new(files).run`.
+TUI for closing the loop on AI-generated code changes — browse diffs, jump between hunks, and annotate them. Entry point: `exe/sight` → `CLI.run` → `CLI.open` → `App.new(files).run`.
 
 **Data flow**: `Git.diff` (raw string) → `DiffParser.parse` (returns `DiffFile[]`) → `App` (curses TUI).
 Untracked files are added via `Git.untracked_files` → `DiffParser.build_untracked`.
