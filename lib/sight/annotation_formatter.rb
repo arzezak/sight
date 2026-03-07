@@ -8,21 +8,21 @@ module Sight
       return "" if annotations.empty?
 
       grouped = annotations.group_by(&:file_path)
-      grouped.map { |path, anns| format_file(path, anns) }.join("\n")
+      grouped.map { |path, file_annotations| format_file(path, file_annotations) }.join("\n")
     end
 
     def format_file(path, annotations)
       out = "## File: #{path}\n\n"
-      annotations.each do |ann|
-        context = ann.hunk.context ? " #{ann.hunk.context}" : ""
-        out += "Hunk (@@#{context}):\n"
-        out += "```diff\n"
-        ann.hunk.lines.each do |line|
+      annotations.each do |annotation|
+        context = annotation.hunk.context ? " #{annotation.hunk.context}" : ""
+        out << "Hunk (@@#{context}):\n"
+        out << "```diff\n"
+        annotation.hunk.lines.each do |line|
           next unless %i[add del].include?(line.type)
-          out += "#{line.content}\n"
+          out << "#{line.content}\n"
         end
-        out += "```\n"
-        out += "> #{ann.comment}\n\n"
+        out << "```\n"
+        out << "> #{annotation.comment}\n\n"
       end
       out
     end
