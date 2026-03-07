@@ -172,7 +172,9 @@ class TestApp < Minitest::Test
     app.annotations << Sight::Annotation.new(
       file_path: file.path, type: :hunk, hunk: file.hunks[1], comment: "fix"
     )
-    assert_equal [1, 2], app.send(:commented_hunk_lines)
+    result = app.send(:commented_hunk_lines)
+    assert_instance_of Set, result
+    assert_equal Set[1, 2], result
   end
 
   def test_format_gutter_other_without_lineno

@@ -318,7 +318,7 @@ module Sight
     end
 
     def commented_hunk_lines
-      result = []
+      result = Set.new
       hunk_offsets.each_with_index do |offset, hunk_index|
         next unless hunk_commented?(file_idx, hunk_index)
         hunk_end = (hunk_index + 1 < hunk_offsets.size) ? hunk_offsets[hunk_index + 1] : lines.size
