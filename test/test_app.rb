@@ -13,32 +13,55 @@ class TestApp < Minitest::Test
     assert_equal 0, app.hunk_idx
   end
 
-  def test_build_file_lines_strips_prefix
+  def test_flat_view_no_separator_for_first_file
     app = Sight::App.new([make_file])
-    lines = app.file_lines[0]
-    assert_equal 1, lines.size
-    assert_equal :add, lines[0].type
-    assert_equal "new", lines[0].text
-    assert_equal 1, lines[0].lineno
+    refute_equal :file_separator, app.lines[0].type
   end
 
-  def test_build_file_lines_keeps_meta_content
+  def test_flat_view_strips_prefix
+    app = Sight::App.new([make_file])
+    line = app.lines[0]
+    assert_equal :add, line.type
+    assert_equal "new", line.text
+    assert_equal 1, line.lineno
+  end
+
+  def test_flat_view_keeps_meta_content
     meta = Sight::DiffLine.new(type: :meta, content: "@@ -1,3 +1,5 @@", lineno: nil)
     hunk = Sight::Hunk.new(context: "", lines: [meta])
     file = Sight::DiffFile.new(path: "m.rb", hunks: [hunk])
     app = Sight::App.new([file])
-    assert_equal "@@ -1,3 +1,5 @@", app.file_lines[0][0].text
+    assert_equal "@@ -1,3 +1,5 @@", app.lines[0].text
   end
 
-  def test_build_file_lines_multiple_hunks
+  def test_flat_view_multiple_hunks
     app = Sight::App.new([make_multi_hunk_file])
-    assert_equal 3, app.file_lines[0].size
+    # 1 line (h1) + 2 lines (h2) = 3
+    assert_equal 3, app.lines.size
+  end
+
+  def test_flat_view_multiple_files
+    app = Sight::App.new([make_file, make_multi_hunk_file])
+    # 1 line + separator + 1 line + 2 lines = 5
+    assert_equal 5, app.lines.size
+  end
+
+  def test_flat_view_separator_between_files
+    app = Sight::App.new([make_file, make_multi_hunk_file])
+    assert_equal :file_separator, app.lines[1].type
   end
 
   def test_hunk_offsets
     app = Sight::App.new([make_multi_hunk_file])
     offsets = app.send(:hunk_offsets)
     assert_equal [0, 1], offsets
+  end
+
+  def test_hunk_offsets_span_files
+    app = Sight::App.new([make_file, make_multi_hunk_file])
+    offsets = app.send(:hunk_offsets)
+    # hunk@0, separator(1), hunk@2, hunk@3
+    assert_equal [0, 2, 3], offsets
   end
 
   def test_hunk_end_offset_middle
@@ -49,13 +72,6 @@ class TestApp < Minitest::Test
   def test_hunk_end_offset_last
     app = Sight::App.new([make_multi_hunk_file])
     assert_equal 3, app.send(:hunk_end_offset, 1)
-  end
-
-  def test_hunk_offsets_cached
-    app = Sight::App.new([make_multi_hunk_file])
-    first = app.send(:hunk_offsets)
-    second = app.send(:hunk_offsets)
-    assert_same first, second
   end
 
   def test_jump_hunk_forward
@@ -90,6 +106,23 @@ class TestApp < Minitest::Test
     end
   end
 
+  def test_jump_hunk_across_files
+    app = Sight::App.new([make_file, make_file])
+    stub_scroll_height(app, 100) do
+      app.send(:jump_hunk, 1)
+      assert_equal 1, app.hunk_idx
+    end
+  end
+
+  def test_scroll_syncs_hunk_idx
+    app = Sight::App.new([make_file, make_multi_hunk_file])
+    stub_scroll_height(app, 2) do
+      # hunks at offsets [0, 2, 3]; scroll past separator
+      app.send(:scroll, 2)
+      assert_equal 1, app.hunk_idx
+    end
+  end
+
   def test_scroll_forward
     app = Sight::App.new([make_long_file(20)])
     stub_scroll_height(app, 10) do
@@ -115,37 +148,6 @@ class TestApp < Minitest::Test
     end
   end
 
-  def test_jump_file_forward
-    app = Sight::App.new([make_file, make_file])
-    app.send(:jump_file, 1)
-    assert_equal 1, app.file_idx
-    assert_equal 0, app.offset
-    assert_equal 0, app.hunk_idx
-  end
-
-  def test_jump_file_clamps_at_end
-    app = Sight::App.new([make_file, make_file])
-    app.send(:jump_file, 10)
-    assert_equal 1, app.file_idx
-  end
-
-  def test_jump_file_clamps_at_start
-    app = Sight::App.new([make_file])
-    app.send(:jump_file, -1)
-    assert_equal 0, app.file_idx
-  end
-
-  def test_jump_file_resets_state
-    app = Sight::App.new([make_multi_hunk_file, make_file])
-    stub_scroll_height(app, 100) do
-      app.send(:jump_hunk, 1)
-      app.offset = 5
-    end
-    app.send(:jump_file, 1)
-    assert_equal 0, app.offset
-    assert_equal 0, app.hunk_idx
-  end
-
   def test_format_gutter_with_lineno
     app = Sight::App.new([make_file])
     assert_equal "  5", app.send(:format_gutter, :add, 5, 3)
@@ -158,7 +160,7 @@ class TestApp < Minitest::Test
 
   def test_hunk_commented_false_when_no_annotations
     app = Sight::App.new([make_multi_hunk_file])
-    refute app.send(:hunk_commented?, 0, 0)
+    refute app.send(:hunk_commented?, 0)
   end
 
   def test_hunk_commented_true_when_annotated
@@ -167,8 +169,8 @@ class TestApp < Minitest::Test
     app.annotations << Sight::Annotation.new(
       file_path: file.path, type: :hunk, hunk: file.hunks[1], comment: "fix this"
     )
-    refute app.send(:hunk_commented?, 0, 0)
-    assert app.send(:hunk_commented?, 0, 1)
+    refute app.send(:hunk_commented?, 0)
+    assert app.send(:hunk_commented?, 1)
   end
 
   def test_commented_hunk_lines_empty

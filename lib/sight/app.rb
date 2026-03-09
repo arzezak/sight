@@ -4,17 +4,15 @@ require "curses"
 
 module Sight
   class App
-    attr_reader :files, :file_lines, :annotations
-    attr_accessor :file_idx, :offset, :hunk_idx
+    attr_reader :files, :lines, :annotations
+    attr_accessor :offset, :hunk_idx
 
     def initialize(files)
       @files = files
-      @file_lines = files.map { build_file_lines(it) }
-      @file_idx = 0
       @offset = 0
       @hunk_idx = 0
-      @hunk_offsets_cache = {}
       @annotations = []
+      build_flat_view
     end
 
     def run
@@ -31,11 +29,24 @@ module Sight
 
     private
 
-    def build_file_lines(file)
-      file.hunks.flat_map do |hunk|
-        hunk.lines.map do |diff_line|
-          text = (diff_line.type == :meta) ? diff_line.content : diff_line.content[1..]
-          DisplayLine.new(type: diff_line.type, text: text, lineno: diff_line.lineno)
+    def build_flat_view
+      @lines = []
+      @hunk_offsets = []
+      @hunk_entries = []
+
+      @files.each_with_index do |file, file_idx|
+        if file_idx > 0
+          @lines << DisplayLine.new(type: :file_separator, text: nil, lineno: nil)
+        end
+
+        file.hunks.each do |hunk|
+          @hunk_offsets << @lines.size
+          @hunk_entries << [file, hunk]
+
+          hunk.lines.each do |diff_line|
+            text = (diff_line.type == :meta) ? diff_line.content : diff_line.content[1..]
+            @lines << DisplayLine.new(type: diff_line.type, text: text, lineno: diff_line.lineno)
+          end
         end
       end
     end
@@ -56,10 +67,6 @@ module Sight
       Curses.init_pair(6, Curses::COLOR_MAGENTA, -1)
     end
 
-    def lines
-      file_lines[file_idx]
-    end
-
     def render
       win = Curses.stdscr
       win.clear
@@ -71,19 +78,15 @@ module Sight
     end
 
     def render_header(win, width)
-      file = files[file_idx]
-      badge = "[#{file.status || :modified}]"
-      path = file.path
-      gap = width - path.length - badge.length
+      file, hunk = current_hunk_entry
+      return unless file
+      badge = " [#{file.status || :modified}]"
+      left = "\u2500\u2500 #{file.path} "
+      left += "\u2500\u2500 #{hunk.context} " if hunk.context && !hunk.context.empty?
+      fill_len = [width - left.length - badge.length, 0].max
       win.setpos(0, 0)
-      if gap >= 1
-        win.attron(color_for(:header)) { win.addstr("#{path}#{" " * gap}") }
-        win.attron(badge_color(file.status)) { win.addstr(badge) }
-      else
-        win.attron(color_for(:header)) { win.addstr(path[0, width]) }
-      end
-      win.setpos(1, 0)
-      win.attron(Curses.color_pair(0) | Curses::A_BOLD) { win.addstr("\u2500" * width) }
+      win.attron(color_for(:file_header)) { win.addstr("#{left}#{"\u2500" * fill_len}"[0, width - badge.length]) }
+      win.attron(badge_color(file.status)) { win.addstr(badge) }
     end
 
     def render_content(win, width)
@@ -100,12 +103,18 @@ module Sight
         idx = offset + row
         break if idx >= lines.size
         line = lines[idx]
-        win.setpos(row + 2, 0)
+        win.setpos(row + 1, 0)
+
+        if line.type == :file_separator
+          win.attron(color_for(:file_header)) { win.addstr("\u2500" * width) }
+          next
+        end
+
         active = idx >= selected_start && idx < selected_end
         gutter_str = format_gutter(line.type, line.lineno, gutter)
         commented = commented_lines.include?(idx)
         separator = commented ? "\u2503" : "\u2502"
-        sep_attr = commented ? Curses.color_pair(4) : dim
+        sep_attr = commented ? Curses.color_pair(4) : color_for(:file_header)
         win.attron(dim) { win.addstr("#{gutter_str} ") }
         win.attron(sep_attr) { win.addstr(separator) }
         win.attron(dim) { win.addstr(" ") }
@@ -122,8 +131,8 @@ module Sight
         else
           ((offset + scroll_height) * 100.0 / lines.size).ceil.clamp(0, 100)
         end
-        commented = hunk_commented?(file_idx, hunk_idx) ? " [commented]" : ""
-        status = " File #{file_idx + 1}/#{files.size} | Hunk #{hunk_idx + 1}/#{hunk_offsets.size}#{commented} | #{percent}% "
+        commented = hunk_commented?(hunk_idx) ? " [commented]" : ""
+        status = " Hunk #{hunk_idx + 1}/#{hunk_offsets.size}#{commented} | #{percent}% "
         win.addstr(status.ljust(width))
       end
     end
@@ -143,6 +152,7 @@ module Sight
       when :add then Curses.color_pair(1)
       when :del then Curses.color_pair(2)
       when :header then Curses.color_pair(0) | Curses::A_BOLD
+      when :file_header then Curses.color_pair(3) | Curses::A_BOLD
       else Curses.color_pair(0)
       end
     end
@@ -157,12 +167,12 @@ module Sight
     end
 
     def scroll_height
-      Curses.lines - 3
+      Curses.lines - 2
     end
 
     def gutter_width
       @gutter_width ||= begin
-        max = file_lines.flat_map { |file| file.filter_map { |line| line.lineno } }.max || 1
+        max = @lines.filter_map(&:lineno).max || 1
         max.to_s.length
       end
     end
@@ -171,14 +181,14 @@ module Sight
       key = Curses.getch
       case key
       when "q", 27 then return false
-      when "j" then jump_hunk(1)
-      when "k" then jump_hunk(-1)
-      when "n" then jump_file(1)
-      when "p" then jump_file(-1)
+      when "j" then scroll(1)
+      when "k" then scroll(-1)
       when 6 then scroll(scroll_height)
       when 2 then scroll(-scroll_height)
       when 4 then scroll(scroll_height / 2)
       when 21 then scroll(-scroll_height / 2)
+      when "n", 14 then jump_hunk(1)
+      when "p", 16 then jump_hunk(-1)
       when "c" then annotate_hunk
       when "?" then show_help
       end
@@ -186,14 +196,14 @@ module Sight
     end
 
     HELP_KEYS = [
-      ["j", "Next hunk"],
-      ["k", "Previous hunk"],
+      ["j", "Scroll down"],
+      ["k", "Scroll up"],
       ["C-f", "Page down"],
       ["C-b", "Page up"],
       ["C-d", "Half page down"],
       ["C-u", "Half page up"],
-      ["n", "Next file"],
-      ["p", "Previous file"],
+      ["n / C-n", "Next hunk"],
+      ["p / C-p", "Previous hunk"],
       ["q / Esc", "Quit"],
       ["c", "Comment on hunk"],
       ["?", "Toggle this help"]
@@ -216,32 +226,32 @@ module Sight
     def draw_box(win, top, left, width, height, title, content_lines)
       win.attron(Curses.color_pair(0)) do
         win.setpos(top, left)
-        win.addstr("┌#{"─" * (width - 2)}┐")
+        win.addstr("\u250C#{"\u2500" * (width - 2)}\u2510")
 
         win.setpos(top + 1, left)
         pad = width - 2 - title.length
-        win.addstr("│#{" " * (pad / 2)}#{title}#{" " * (pad - pad / 2)}│")
+        win.addstr("\u2502#{" " * (pad / 2)}#{title}#{" " * (pad - pad / 2)}\u2502")
 
         win.setpos(top + 2, left)
-        win.addstr("├#{"─" * (width - 2)}┤")
+        win.addstr("\u251C#{"\u2500" * (width - 2)}\u2524")
 
         content_lines.each_with_index do |line, i|
           win.setpos(top + 3 + i, left)
-          win.addstr("│  #{line.ljust(width - 5)} │")
+          win.addstr("\u2502  #{line.ljust(width - 5)} \u2502")
         end
 
         win.setpos(top + height - 1, left)
-        win.addstr("└#{"─" * (width - 2)}┘")
+        win.addstr("\u2514#{"\u2500" * (width - 2)}\u2518")
       end
     end
 
     def annotate_hunk
-      hunk = files[file_idx].hunks[hunk_idx]
+      file, hunk = current_hunk_entry
       return unless hunk
       comment = prompt_comment("Comment on hunk")
       return unless comment
       @annotations << Annotation.new(
-        file_path: files[file_idx].path,
+        file_path: file.path,
         type: :hunk,
         hunk: hunk,
         comment: comment
@@ -293,31 +303,25 @@ module Sight
       text&.strip&.empty? ? nil : text&.strip
     end
 
-    def hunk_offsets
-      @hunk_offsets_cache[file_idx] ||= begin
-        offsets = []
-        line_idx = 0
-        files[file_idx].hunks.each do |hunk|
-          offsets << line_idx
-          line_idx += hunk.lines.size
-        end
-        offsets
-      end
+    def current_hunk_entry
+      @hunk_entries[hunk_idx] || [nil, nil]
     end
+
+    attr_reader :hunk_offsets
 
     def hunk_end_offset(idx)
       (idx + 1 < hunk_offsets.size) ? hunk_offsets[idx + 1] : lines.size
     end
 
-    def hunk_commented?(file_index, hunk_index)
-      path = files[file_index].path
-      hunk = files[file_index].hunks[hunk_index]
-      annotations.any? { |a| a.file_path == path && a.hunk.equal?(hunk) }
+    def hunk_commented?(hunk_index)
+      file, hunk = @hunk_entries[hunk_index]
+      return false unless file
+      annotations.any? { |a| a.file_path == file.path && a.hunk.equal?(hunk) }
     end
 
     def commented_hunk_lines
       hunk_offsets.each_with_index.each_with_object(Set.new) do |(offset, hunk_index), set|
-        next unless hunk_commented?(file_idx, hunk_index)
+        next unless hunk_commented?(hunk_index)
         (offset...hunk_end_offset(hunk_index)).each { |i| set << i }
       end
     end
@@ -325,6 +329,12 @@ module Sight
     def scroll(delta)
       max = [0, lines.size - scroll_height].max
       self.offset = (offset + delta).clamp(0, max)
+      sync_hunk_to_offset
+    end
+
+    def sync_hunk_to_offset
+      return if hunk_offsets.empty?
+      self.hunk_idx = hunk_offsets.rindex { |o| o <= offset } || 0
     end
 
     def jump_hunk(delta)
@@ -334,14 +344,6 @@ module Sight
       margin = [2, scroll_height / 4].min
       max = [0, lines.size - scroll_height].max
       self.offset = [target - margin, 0].max.clamp(0, max)
-    end
-
-    def jump_file(direction)
-      new_idx = (file_idx + direction).clamp(0, files.size - 1)
-      return if new_idx == file_idx
-      self.file_idx = new_idx
-      self.offset = 0
-      self.hunk_idx = 0
     end
   end
 end
