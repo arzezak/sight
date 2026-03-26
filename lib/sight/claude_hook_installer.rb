@@ -10,7 +10,13 @@ module Sight
     module_function
 
     def settings_path
-      File.join(Dir.home, ".config", "claude", "settings.json")
+      candidates = [
+        (File.join(ENV["XDG_CONFIG_HOME"], "claude", "settings.json") if ENV["XDG_CONFIG_HOME"]),
+        File.join(Dir.home, ".claude", "settings.json"),
+        File.join(Dir.home, ".config", "claude", "settings.json")
+      ].compact
+
+      candidates.find { File.exist?(it) } || candidates.last
     end
 
     def install(path: settings_path)

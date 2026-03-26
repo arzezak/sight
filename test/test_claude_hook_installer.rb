@@ -87,4 +87,42 @@ class TestClaudeHookInstaller < Minitest::Test
     out, = capture_io { Sight::ClaudeHookInstaller.uninstall(path: @settings_path) }
     assert_includes out, "No sight hook"
   end
+
+  def test_settings_path_prefers_dot_claude
+    dot_claude = File.join(@tmpdir, ".claude", "settings.json")
+    FileUtils.mkdir_p(File.dirname(dot_claude))
+    File.write(dot_claude, "{}")
+
+    Dir.stub(:home, @tmpdir) do
+      path = Sight::ClaudeHookInstaller.settings_path
+
+      assert_equal dot_claude, path
+    end
+  end
+
+  def test_settings_path_prefers_xdg_config_home
+    xdg_path = File.join(@tmpdir, "xdg", "claude", "settings.json")
+    FileUtils.mkdir_p(File.dirname(xdg_path))
+    File.write(xdg_path, "{}")
+
+    dot_claude = File.join(@tmpdir, ".claude", "settings.json")
+    FileUtils.mkdir_p(File.dirname(dot_claude))
+    File.write(dot_claude, "{}")
+
+    Dir.stub(:home, @tmpdir) do
+      ENV.stub(:[], -> { (it == "XDG_CONFIG_HOME") ? File.join(@tmpdir, "xdg") : nil }) do
+        path = Sight::ClaudeHookInstaller.settings_path
+
+        assert_equal xdg_path, path
+      end
+    end
+  end
+
+  def test_settings_path_falls_back_to_dot_config
+    Dir.stub(:home, @tmpdir) do
+      path = Sight::ClaudeHookInstaller.settings_path
+
+      assert_equal File.join(@tmpdir, ".config", "claude", "settings.json"), path
+    end
+  end
 end
