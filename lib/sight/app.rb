@@ -36,7 +36,7 @@ module Sight
 
       @files.each_with_index do |file, file_idx|
         if file_idx > 0
-          @lines << DisplayLine.new(type: :file_separator, text: nil, lineno: nil)
+          @lines << DisplayLine.new(type: :file_separator, text: file.path, status: file.status)
         end
 
         file.hunks.each do |hunk|
@@ -80,13 +80,9 @@ module Sight
     def render_header(win, width)
       file, hunk = current_hunk_entry
       return unless file
-      badge = " [#{file.status || :modified}]"
-      left = "\u2500\u2500 #{file.path} "
-      left += "\u2500\u2500 #{hunk.context} " if hunk.context && !hunk.context.empty?
-      fill_len = [width - left.length - badge.length, 0].max
+      context = hunk.context if hunk.context && !hunk.context.empty?
       win.setpos(0, 0)
-      win.attron(color_for(:file_header)) { win.addstr("#{left}#{"\u2500" * fill_len}"[0, width - badge.length]) }
-      win.attron(badge_color(file.status)) { win.addstr(badge) }
+      render_file_line(win, width, file.path, file.status, context: context)
     end
 
     def render_content(win, width)
@@ -106,7 +102,7 @@ module Sight
         win.setpos(row + 1, 0)
 
         if line.type == :file_separator
-          win.attron(color_for(:file_header)) { win.addstr("\u2500" * width) }
+          render_file_line(win, width, line.text, line.status)
           next
         end
 
@@ -135,6 +131,16 @@ module Sight
         status = " Hunk #{hunk_idx + 1}/#{hunk_offsets.size}#{commented} | #{percent}% "
         win.addstr(status.ljust(width))
       end
+    end
+
+    def render_file_line(win, width, path, status, context: nil)
+      status ||= :modified
+      badge = " [#{status}]"
+      left = "\u2500\u2500 #{path} "
+      left += "\u2500\u2500 #{context} " if context
+      rule_width = width - badge.length
+      win.attron(color_for(:file_header)) { win.addstr(left.ljust(rule_width, "\u2500")[0, rule_width]) }
+      win.attron(badge_color(status)) { win.addstr(badge) }
     end
 
     def format_gutter(type, lineno, width)
