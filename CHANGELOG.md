@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0] - 2026-03-26
+
+### Changed
+
+- Show annotation summary instead of full dump on quit
+- Extracted `Summary` class from `AnnotationFormatter`
+- Converted `AnnotationFormatter` from module to class
+
 ## [0.5.0] - 2026-03-07
 
 ### Removed
