@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.1] - 2026-03-26
+
+### Fixed
+
+- Resolve Claude config from `~/.claude`, `XDG_CONFIG_HOME`, and `~/.config/claude` instead of hardcoding `~/.config/claude`
+
 ## [0.6.0] - 2026-03-26
 
 ### Changed
