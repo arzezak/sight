@@ -1,5 +1,8 @@
 # Sight
 
+> [!WARNING]
+> Sight is no longer maintained and this repository is archived. The gem stays on RubyGems as is. If you installed the Claude Code hook, run `sight uninstall-hook claude` before you uninstall the gem.
+
 TUI for closing the loop on AI-generated code changes.
 
 ## Installation
